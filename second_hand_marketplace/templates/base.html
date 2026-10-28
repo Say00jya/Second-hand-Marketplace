@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="description" content="ReMarket is a second-hand marketplace for Kerala. Buy and sell phones, laptops, furniture, books and more.">
+  <title>{% block title %}ReMarket{% endblock %}</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M30 0H100V100H30L0 50Z' fill='%23ffc94d'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body data-page="{% block page_id %}{% endblock %}">
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="site-nav sticky-top">
+  <nav class="navbar navbar-expand-lg py-2" aria-label="Main navigation">
+    <div class="container">
+      <a class="brand" href="{{ url_for('index') }}" aria-label="ReMarket home">
+        <span class="brand-mark" aria-hidden="true"><i class="bi bi-arrow-repeat"></i></span>
+        <span><span class="re">Re</span>Market</span>
+      </a>
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu"
+              aria-controls="navMenu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navMenu">
+        <form class="nav-search mx-lg-4 my-2 my-lg-0 flex-lg-grow-1" action="{{ url_for('products') }}" method="get" role="search" style="max-width: 420px;">
+          <label for="navSearch" class="visually-hidden">Search products</label>
+          <i class="bi bi-search" aria-hidden="true"></i>
+          <input id="navSearch" class="form-control" type="search" name="q" placeholder="Search phones, laptops, sofas…" maxlength="100"
+                 value="{{ request.args.get('q', '') if request.endpoint == 'products' else '' }}">
+        </form>
+        <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+          <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'products' }}" href="{{ url_for('products') }}">Browse</a></li>
+          {% if current_user %}
+          <li class="nav-item">
+            <a class="nav-link {{ 'active' if request.endpoint == 'wishlist' }}" href="{{ url_for('wishlist') }}">
+              <i class="bi bi-heart" aria-hidden="true"></i> Wishlist
+              <span class="count-pill" id="wishlistCount" {% if not wishlist_ids %}hidden{% endif %}>{{ wishlist_ids|length }}</span>
+            </a>
+          </li>
+          <li class="nav-item ms-lg-2 my-2 my-lg-0">
+            <a class="btn btn-tag btn-sm" href="{{ url_for('sell') }}"><i class="bi bi-plus-lg" aria-hidden="true"></i> Sell</a>
+          </li>
+          <li class="nav-item dropdown ms-lg-2">
+            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="avatar" aria-hidden="true">{{ current_user.full_name[0]|upper }}</span>
+              <span class="d-lg-none">{{ current_user.full_name }}</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+              <li><h6 class="dropdown-header">{{ current_user.full_name }}</h6></li>
+              <li><a class="dropdown-item" href="{{ url_for('my_listings') }}"><i class="bi bi-box-seam me-2" aria-hidden="true"></i>My listings</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('wishlist') }}"><i class="bi bi-heart me-2" aria-hidden="true"></i>Wishlist</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('profile') }}"><i class="bi bi-person me-2" aria-hidden="true"></i>Profile</a></li>
+              {% if current_user.role == 'admin' %}
+              <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}"><i class="bi bi-speedometer2 me-2" aria-hidden="true"></i>Admin dashboard</a></li>
+              {% endif %}
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <form action="{{ url_for('logout') }}" method="post">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="dropdown-item" type="submit"><i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>Log out</button>
+                </form>
+              </li>
+            </ul>
+          </li>
+          {% else %}
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">Log in</a></li>
+          <li class="nav-item ms-lg-1"><a class="btn btn-primary btn-sm" href="{{ url_for('register') }}">Sign up</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<div class="container flash-area" aria-live="polite">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      {% set kind = 'danger' if category == 'error' else category %}
+      {% set icon = {'success': 'bi-check-circle-fill', 'danger': 'bi-exclamation-octagon-fill', 'warning': 'bi-exclamation-triangle-fill', 'info': 'bi-info-circle-fill'}.get(kind, 'bi-info-circle-fill') %}
+      <div class="alert alert-{{ kind }} alert-dismissible fade show d-flex align-items-start gap-2" role="alert">
+        <i class="bi {{ icon }} mt-1" aria-hidden="true"></i>
+        <div class="flex-grow-1">{{ message }}</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endwith %}
+</div>
+
+<main id="main">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-md-5">
+        <a class="brand mb-2" href="{{ url_for('index') }}"><span class="brand-mark" aria-hidden="true"><i class="bi bi-arrow-repeat"></i></span><span>ReMarket</span></a>
+        <p class="mb-0 mt-2" style="max-width: 40ch;">Second-hand buying and selling for Kerala. Good things deserve a second owner.</p>
+      </div>
+      <div class="col-6 col-md-3">
+        <h2>Explore</h2>
+        <ul class="list-unstyled mb-0">
+          <li><a href="{{ url_for('products') }}">Browse listings</a></li>
+          <li><a href="{{ url_for('sell') }}">Sell an item</a></li>
+          <li><a href="{{ url_for('wishlist') }}">Wishlist</a></li>
+        </ul>
+      </div>
+      <div class="col-6 col-md-4">
+        <h2>Safe trading tips</h2>
+        <ul class="list-unstyled mb-0 small">
+          <li>Meet in a public place.</li>
+          <li>Check the item before you pay.</li>
+          <li>Never share OTPs or bank PINs.</li>
+        </ul>
+      </div>
+    </div>
+    <hr class="my-4">
+    <p class="small mb-0">© 2026 ReMarket. A college microproject on RDBMS and UID. All listings and people shown are fictional sample data.</p>
+  </div>
+</footer>
+
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-0 pb-0">
+        <h2 class="modal-title fs-5" id="confirmModalLabel">Please confirm</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="confirmMessage"></div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmYes">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

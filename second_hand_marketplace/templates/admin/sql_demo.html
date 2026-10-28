@@ -1,0 +1,30 @@
+{% extends 'admin/layout.html' %}
+{% block admin_title %}SQL demo{% endblock %}
+{% block admin_content %}
+<h1 class="page-title mb-1">SQL demo</h1>
+<p class="text-muted measure">Each card runs a real query against the <code>second_hand_marketplace</code> database. It shows the SQL, the RDBMS concepts it demonstrates and the result, which is handy for viva.</p>
+<div class="vstack gap-4">
+  {% for q in results %}
+  <section class="card-plain pad" aria-labelledby="q{{ loop.index }}">
+    <div class="d-flex flex-wrap justify-content-between gap-2 mb-1">
+      <h2 class="h5 fw-bold mb-0" id="q{{ loop.index }}">Query {{ loop.index }}: {{ q.title }}</h2>
+      <span class="text-muted small">{{ q.row_count }} row{{ '' if q.row_count == 1 else 's' }}</span>
+    </div>
+    <div class="d-flex flex-wrap gap-1 mb-2">{% for c in q.concepts %}<span class="concept">{{ c }}</span>{% endfor %}</div>
+    <p class="text-muted">{{ q.explain }}</p>
+    <pre class="sql-block mb-3"><code>{{ q.sql }}</code></pre>
+    {% if q.error %}
+      <div class="alert alert-danger mb-0" role="alert">{{ q.error }}</div>
+    {% elif q.rows %}
+      <div class="table-card"><div class="table-responsive"><table class="table table-sm">
+        <thead><tr>{% for col in q.columns %}<th scope="col">{{ col }}</th>{% endfor %}</tr></thead>
+        <tbody>{% for row in q.rows %}<tr>{% for col in q.columns %}<td>{{ row[col] if row[col] is not none else '-' }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+      </table></div></div>
+      {% if q.row_count > q.rows|length %}<p class="small text-muted mt-2 mb-0">Showing the first {{ q.rows|length }} rows.</p>{% endif %}
+    {% else %}
+      <p class="text-muted mb-0">This query returned no rows.</p>
+    {% endif %}
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'admin/layout.html' %}
+{% from '_macros.html' import csrf %}
+{% block admin_title %}Users{% endblock %}
+{% block admin_content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+  <h1 class="page-title mb-0">Users <span class="text-muted fs-5">({{ users|length }})</span></h1>
+  <form class="d-flex gap-2" method="get" role="search">
+    <label class="visually-hidden" for="q">Search users</label>
+    <input class="form-control" id="q" name="q" value="{{ q }}" placeholder="Name, email or town" maxlength="100">
+    <button class="btn btn-primary" type="submit">Search</button>
+  </form>
+</div>
+<div class="table-card"><div class="table-responsive"><table class="table">
+  <caption class="visually-hidden">All registered users</caption>
+  <thead><tr><th scope="col">User</th><th scope="col">Contact</th><th scope="col">Location</th><th scope="col">Role</th><th scope="col" class="text-end">Listings</th><th scope="col">Status</th><th scope="col">Joined</th><th scope="col" class="text-end">Actions</th></tr></thead>
+  <tbody>
+  {% for u in users %}
+  <tr>
+    <td class="fw-semibold">{{ u.full_name }}</td>
+    <td><div>{{ u.email }}</div><div class="small text-muted">{{ u.phone }}</div></td>
+    <td>{{ u.location }}</td>
+    <td>{% if u.role == 'admin' %}<span class="badge text-bg-dark rounded-pill">Admin</span>{% else %}User{% endif %}</td>
+    <td class="text-end">{{ u.listing_count }}</td>
+    <td>{% if u.is_active %}<span class="badge badge-soft rounded-pill">Active</span>{% else %}<span class="badge badge-sold rounded-pill">Disabled</span>{% endif %}</td>
+    <td class="text-nowrap">{{ u.created_at|fdate }}</td>
+    <td class="text-end">
+      {% if u.user_id != current_user.user_id %}
+      <div class="d-inline-flex gap-1">
+        <form action="{{ url_for('admin_user_action', user_id=u.user_id, action='disable' if u.is_active else 'enable') }}" method="post"
+              {% if u.is_active %}data-confirm="Disable {{ u.full_name }}? They will not be able to log in." data-confirm-label="Disable"{% endif %}>
+          {{ csrf() }}<button class="btn btn-outline-secondary btn-sm" type="submit">{{ 'Disable' if u.is_active else 'Enable' }}</button>
+        </form>
+        <form action="{{ url_for('admin_user_action', user_id=u.user_id, action='delete') }}" method="post"
+              data-confirm="Delete {{ u.full_name }} and all of their listings, wishlist and messages? This cannot be undone.">
+          {{ csrf() }}<button class="btn btn-outline-danger btn-sm" type="submit" aria-label="Delete {{ u.full_name }}"><i class="bi bi-trash" aria-hidden="true"></i></button>
+        </form>
+      </div>
+      {% else %}<span class="small text-muted">You</span>{% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="8" class="text-center text-muted py-4">No users match “{{ q }}”.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div></div>
+{% endblock %}

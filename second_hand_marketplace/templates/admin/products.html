@@ -1,0 +1,54 @@
+{% extends 'admin/layout.html' %}
+{% from '_macros.html' import csrf, status_badge %}
+{% block admin_title %}Products{% endblock %}
+{% block admin_content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+  <h1 class="page-title mb-0">Products <span class="text-muted fs-5">({{ products|length }})</span></h1>
+  <form class="d-flex flex-wrap gap-2" method="get" role="search">
+    <label class="visually-hidden" for="q">Search products</label>
+    <input class="form-control" style="width: 200px" id="q" name="q" value="{{ q }}" placeholder="Title or seller" maxlength="100">
+    <label class="visually-hidden" for="status">Status</label>
+    <select class="form-select" style="width: 140px" id="status" name="status">
+      <option value="">All statuses</option>
+      {% for s in ['active', 'sold', 'removed'] %}<option value="{{ s }}" {{ 'selected' if status == s }}>{{ s|capitalize }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-primary" type="submit">Filter</button>
+  </form>
+</div>
+<div class="table-card"><div class="table-responsive"><table class="table">
+  <caption class="visually-hidden">All product listings</caption>
+  <thead><tr><th scope="col">Product</th><th scope="col">Seller</th><th scope="col">Price</th><th scope="col">Status</th><th scope="col">Reports</th><th scope="col" class="text-end">Actions</th></tr></thead>
+  <tbody>
+  {% for p in products %}
+  <tr>
+    <td>
+      <div class="d-flex align-items-center gap-3">
+        <img class="thumb" src="{{ p.image|image_url }}" alt="">
+        <div><a class="fw-semibold text-decoration-none" href="{{ url_for('product_details', product_id=p.product_id) }}">{{ p.title|truncate(40) }}</a>
+          <div class="small text-muted">{{ p.category_name }} · {{ p.created_at|fdate }}{% if p.is_featured %} · <span class="text-success fw-semibold">Featured</span>{% endif %}</div></div>
+      </div>
+    </td>
+    <td>{{ p.seller_name }}</td>
+    <td class="fw-semibold">{{ p.price|inr }}</td>
+    <td>{{ status_badge(p.status) }}</td>
+    <td>{% if p.open_reports %}<span class="badge badge-pending rounded-pill">{{ p.open_reports }} open</span>{% else %}<span class="text-muted">0</span>{% endif %}</td>
+    <td class="text-end">
+      <div class="d-inline-flex flex-wrap gap-1 justify-content-end">
+        {% if p.status == 'removed' %}
+          <form action="{{ url_for('admin_product_action', product_id=p.product_id, action='restore') }}" method="post">{{ csrf() }}<button class="btn btn-outline-primary btn-sm" type="submit">Restore</button></form>
+        {% else %}
+          {% if p.status == 'active' %}
+          <form action="{{ url_for('admin_product_action', product_id=p.product_id, action='unfeature' if p.is_featured else 'feature') }}" method="post">{{ csrf() }}<button class="btn btn-outline-secondary btn-sm" type="submit">{{ 'Unfeature' if p.is_featured else 'Feature' }}</button></form>
+          {% endif %}
+          <form action="{{ url_for('admin_product_action', product_id=p.product_id, action='remove') }}" method="post" data-confirm="Remove “{{ p.title }}” from the marketplace? The seller will no longer be able to relist it." data-confirm-label="Remove">{{ csrf() }}<button class="btn btn-outline-warning btn-sm" type="submit">Remove</button></form>
+        {% endif %}
+        <form action="{{ url_for('admin_product_action', product_id=p.product_id, action='delete') }}" method="post" data-confirm="Permanently delete “{{ p.title }}”? This cannot be undone.">{{ csrf() }}<button class="btn btn-outline-danger btn-sm" type="submit" aria-label="Delete {{ p.title }}"><i class="bi bi-trash" aria-hidden="true"></i></button></form>
+      </div>
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="6" class="text-center text-muted py-4">No products match these filters.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div></div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf, field_error %}
+{% block title %}{{ 'Edit listing' if editing else 'Sell an item' }} | ReMarket{% endblock %}
+{% block content %}
+<div class="container py-4" style="max-width: 860px;">
+  <h1 class="page-title">{{ 'Edit your listing' if editing else 'Sell an item' }}</h1>
+  <p class="text-muted">{{ 'Update the details below. Buyers will see the changes straight away.' if editing else 'Clear photos and an honest description help your item sell faster.' }}</p>
+
+  <form method="post" enctype="multipart/form-data" class="card-plain pad needs-validation" novalidate>
+    {{ csrf() }}
+    <div class="row g-3">
+      <div class="col-12">
+        <label class="form-label" for="title">Title</label>
+        <input class="form-control {{ 'is-invalid' if errors.title }}" id="title" name="title" value="{{ form.get('title', '') }}" required minlength="5" maxlength="150" placeholder="e.g. Dell Inspiron 15, 8GB RAM, 512GB SSD">
+        <div class="invalid-feedback">Title must be 5 to 150 characters.</div>{{ field_error(errors, 'title') }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="category_id">Category</label>
+        <select class="form-select {{ 'is-invalid' if errors.category_id }}" id="category_id" name="category_id" required>
+          <option value="">Choose a category</option>
+          {% for c in categories %}<option value="{{ c.category_id }}" {{ 'selected' if form.get('category_id')|string == c.category_id|string }}>{{ c.name }}</option>{% endfor %}
+        </select>
+        <div class="invalid-feedback">Choose a category.</div>{{ field_error(errors, 'category_id') }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="item_condition">Condition</label>
+        <select class="form-select {{ 'is-invalid' if errors.item_condition }}" id="item_condition" name="item_condition" required>
+          <option value="">Choose condition</option>
+          {% for c in CONDITIONS %}<option {{ 'selected' if form.get('item_condition') == c }}>{{ c }}</option>{% endfor %}
+        </select>
+        <div class="invalid-feedback">Choose the item's condition.</div>{{ field_error(errors, 'item_condition') }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="price">Price (₹)</label>
+        <input class="form-control {{ 'is-invalid' if errors.price }}" type="number" id="price" name="price" min="1" max="10000000" step="1" value="{{ form.get('price', '')|int if form.get('price') and not errors.price else form.get('price', '') }}" required inputmode="numeric">
+        <div class="invalid-feedback">Enter a price greater than 0.</div>{{ field_error(errors, 'price') }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="location">Location</label>
+        <input class="form-control {{ 'is-invalid' if errors.location }}" id="location" name="location" value="{{ form.get('location', '') }}" required minlength="2" maxlength="100" placeholder="e.g. Kottayam">
+        <div class="invalid-feedback">Enter the town where the item is available.</div>{{ field_error(errors, 'location') }}
+      </div>
+      <div class="col-12">
+        <label class="form-label" for="description">Description</label>
+        <textarea class="form-control {{ 'is-invalid' if errors.description }}" id="description" name="description" rows="6" required minlength="20" maxlength="2000" data-counter="descCount" placeholder="Age, usage, reason for selling, accessories included, any defects…">{{ form.get('description', '') }}</textarea>
+        <div class="d-flex justify-content-between"><div class="invalid-feedback">Describe the item in at least 20 characters.</div>{{ field_error(errors, 'description') }}<small class="text-muted ms-auto" id="descCount"></small></div>
+      </div>
+      <div class="col-12">
+        <label class="form-label" for="image">Photo {{ '(leave empty to keep the current one)' if editing else '(optional)' }}</label>
+        <div class="row g-3 align-items-center">
+          <div class="col-sm-5">
+            <img id="imagePreview" class="image-preview" src="{{ product.image|image_url if product else url_for('static', filename='images/placeholder-other.svg') }}" alt="Preview of the selected photo">
+          </div>
+          <div class="col-sm-7">
+            <input class="form-control {{ 'is-invalid' if errors.image }}" type="file" id="image" name="image" accept="image/png,image/jpeg,image/gif,image/webp" aria-describedby="imgHelp">
+            <div class="form-text" id="imgHelp">PNG, JPG, GIF or WEBP, up to 3 MB. Without a photo we show a category picture.</div>
+            {{ field_error(errors, 'image') }}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="d-flex gap-2 justify-content-end mt-4">
+      <a class="btn btn-outline-secondary" href="{{ url_for('product_details', product_id=product.product_id) if editing else url_for('my_listings') }}">Cancel</a>
+      <button class="btn btn-primary px-4" type="submit">{{ 'Save changes' if editing else 'Publish listing' }}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{# Reusable pieces. Import with:  {% from '_macros.html' import product_card with context %} #}
+
+{% macro product_card(p) %}
+<article class="product-card">
+  <div class="media">
+    <a href="{{ url_for('product_details', product_id=p.product_id) }}" tabindex="-1" aria-hidden="true">
+      <img src="{{ p.image|image_url }}" alt="{{ p.title }}" loading="lazy">
+    </a>
+    {% if p.status == 'sold' %}<div class="sold-banner" aria-hidden="true">Sold</div>{% endif %}
+    <span class="condition">{{ p.item_condition }}</span>
+    {% if current_user and current_user.user_id != p.seller_id %}
+      {% set saved = p.product_id in wishlist_ids %}
+      <form class="wishlist-form" action="{{ url_for('wishlist_toggle', product_id=p.product_id) }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="heart-btn {{ 'saved' if saved }}" aria-pressed="{{ 'true' if saved else 'false' }}"
+                aria-label="{{ 'Remove from wishlist' if saved else 'Add to wishlist' }}">
+          <i class="bi {{ 'bi-heart-fill' if saved else 'bi-heart' }}" aria-hidden="true"></i>
+        </button>
+      </form>
+    {% elif not current_user %}
+      <a class="heart-btn" href="{{ url_for('login', next=request.full_path.rstrip('?')) }}" aria-label="Log in to save {{ p.title }}">
+        <i class="bi bi-heart" aria-hidden="true"></i>
+      </a>
+    {% endif %}
+    <span class="price-tag">{{ p.price|inr }}</span>
+  </div>
+  <div class="body">
+    <span class="cat">{{ p.category_name }}</span>
+    <h3><a href="{{ url_for('product_details', product_id=p.product_id) }}">{{ p.title }}</a></h3>
+    <div class="meta">
+      <span><i class="bi bi-geo-alt" aria-hidden="true"></i> {{ p.location }}</span>
+      <span><i class="bi bi-clock" aria-hidden="true"></i> {{ p.created_at|ago }}</span>
+    </div>
+    <a class="btn btn-outline-primary btn-sm" href="{{ url_for('product_details', product_id=p.product_id) }}">View details</a>
+  </div>
+</article>
+{% endmacro %}
+
+{% macro field_error(errors, name) %}
+  {% if errors and errors.get(name) %}<div class="invalid-feedback d-block" id="{{ name }}-error">{{ errors[name] }}</div>{% endif %}
+{% endmacro %}
+
+{% macro status_badge(status) %}
+  {% if status == 'active' %}<span class="badge badge-soft rounded-pill">Active</span>
+  {% elif status == 'sold' %}<span class="badge badge-sold rounded-pill">Sold</span>
+  {% elif status == 'removed' %}<span class="badge badge-removed rounded-pill">Removed</span>
+  {% elif status == 'pending' %}<span class="badge badge-pending rounded-pill">Pending</span>
+  {% elif status == 'resolved' %}<span class="badge badge-soft rounded-pill">Resolved</span>
+  {% else %}<span class="badge badge-removed rounded-pill">{{ status|capitalize }}</span>{% endif %}
+{% endmacro %}
+
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endmacro %}

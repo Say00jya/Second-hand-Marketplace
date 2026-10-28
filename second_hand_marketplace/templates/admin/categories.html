@@ -1,0 +1,47 @@
+{% extends 'admin/layout.html' %}
+{% from '_macros.html' import csrf %}
+{% block admin_title %}Categories{% endblock %}
+{% block admin_content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+  <h1 class="page-title mb-0">Categories</h1>
+  <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#categoryModal"><i class="bi bi-plus-lg" aria-hidden="true"></i> Add category</button>
+</div>
+<div class="table-card"><div class="table-responsive"><table class="table">
+  <caption class="visually-hidden">Product categories</caption>
+  <thead><tr><th scope="col">Category</th><th scope="col">Description</th><th scope="col" class="text-end">Listings</th><th scope="col" class="text-end">Actions</th></tr></thead>
+  <tbody>
+  {% for c in categories %}
+  <tr>
+    <td><span class="d-inline-flex align-items-center gap-2 fw-semibold"><span class="avatar" style="width:34px;height:34px;border-radius:10px" aria-hidden="true"><i class="bi {{ c.icon }}"></i></span>{{ c.name }}</span></td>
+    <td class="text-muted">{{ c.description or '-' }}</td>
+    <td class="text-end">{{ c.product_count }}</td>
+    <td class="text-end">
+      <div class="d-inline-flex gap-1">
+        <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#categoryModal"
+                data-edit-url="{{ url_for('admin_category_edit', category_id=c.category_id) }}"
+                data-name="{{ c.name }}" data-description="{{ c.description or '' }}" data-icon="{{ c.icon }}">Edit</button>
+        <form action="{{ url_for('admin_category_delete', category_id=c.category_id) }}" method="post" data-confirm="Delete the “{{ c.name }}” category?">
+          {{ csrf() }}<button class="btn btn-outline-danger btn-sm" type="submit" aria-label="Delete {{ c.name }}" {{ 'disabled' if c.product_count }} {% if c.product_count %}title="Categories with listings cannot be deleted"{% endif %}><i class="bi bi-trash" aria-hidden="true"></i></button>
+        </form>
+      </div>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div></div>
+
+<div class="modal fade" id="categoryModal" tabindex="-1" aria-labelledby="categoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content border-0 shadow needs-validation" novalidate method="post" data-add-url="{{ url_for('admin_category_add') }}" action="{{ url_for('admin_category_add') }}">
+      {{ csrf() }}
+      <div class="modal-header border-0"><h2 class="modal-title fs-5" id="categoryModalLabel">Add category</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <div class="mb-3"><label class="form-label" for="cat_name">Name</label><input class="form-control" id="cat_name" name="name" required minlength="2" maxlength="50"><div class="invalid-feedback">Enter a name (2 to 50 characters).</div></div>
+        <div class="mb-3"><label class="form-label" for="cat_desc">Description</label><input class="form-control" id="cat_desc" name="description" maxlength="255"></div>
+        <div><label class="form-label" for="cat_icon">Icon class</label><input class="form-control" id="cat_icon" name="icon" value="bi-grid" required pattern="bi-[a-z0-9\-]+" aria-describedby="iconHelp"><div class="form-text" id="iconHelp">Any <a href="https://icons.getbootstrap.com/" target="_blank" rel="noopener">Bootstrap Icons</a> name, such as bi-tv or bi-bag.</div><div class="invalid-feedback">Use a name starting with bi-.</div></div>
+      </div>
+      <div class="modal-footer border-0"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" type="submit">Save category</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

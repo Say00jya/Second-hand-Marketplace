@@ -1,0 +1,44 @@
+{% extends 'admin/layout.html' %}
+{% from '_macros.html' import csrf, status_badge %}
+{% block admin_title %}Reports{% endblock %}
+{% block admin_content %}
+<h1 class="page-title mb-3">Reports</h1>
+<ul class="nav nav-pills mb-3 gap-1" aria-label="Filter reports">
+  {% for key, label, n in [('pending', 'Pending', counts.pending), ('resolved', 'Resolved', counts.resolved), ('dismissed', 'Dismissed', counts.dismissed), ('all', 'All', counts.total)] %}
+  <li class="nav-item"><a class="nav-link {{ 'active' if status == key }}" style="{{ 'background:var(--accent)' if status == key }}" href="{{ url_for('admin_reports', status=key) }}">{{ label }} <span class="opacity-75">({{ n or 0 }})</span></a></li>
+  {% endfor %}
+</ul>
+
+{% if reports %}
+<div class="vstack gap-3">
+  {% for r in reports %}
+  <article class="card-plain pad py-3">
+    <div class="d-flex flex-wrap justify-content-between gap-2">
+      <div>
+        <a class="fw-bold text-decoration-none" href="{{ url_for('product_details', product_id=r.product_id) }}">{{ r.title }}</a>
+        <span class="ms-1">{{ status_badge(r.product_status) }}</span>
+        <div class="small text-muted">Seller: {{ r.seller_name }} · Reported by {{ r.reporter_name }} · {{ r.created_at|ago }}</div>
+      </div>
+      <div>{{ status_badge(r.status) }}</div>
+    </div>
+    <p class="mt-2 mb-1"><strong>{{ r.reason }}</strong></p>
+    {% if r.details %}<p class="text-muted mb-2">{{ r.details }}</p>{% endif %}
+    {% if r.status == 'pending' %}
+    <div class="d-flex flex-wrap gap-2 mt-2">
+      {% if r.product_status != 'removed' %}
+      <form action="{{ url_for('admin_report_action', report_id=r.report_id, action='remove_listing') }}" method="post" data-confirm="Remove “{{ r.title }}” and resolve all of its pending reports?" data-confirm-label="Remove listing">
+        {{ csrf() }}<input type="hidden" name="view" value="{{ status }}"><button class="btn btn-danger btn-sm" type="submit"><i class="bi bi-trash" aria-hidden="true"></i> Remove listing</button></form>
+      {% endif %}
+      <form action="{{ url_for('admin_report_action', report_id=r.report_id, action='resolve') }}" method="post">{{ csrf() }}<input type="hidden" name="view" value="{{ status }}"><button class="btn btn-outline-primary btn-sm" type="submit">Mark resolved</button></form>
+      <form action="{{ url_for('admin_report_action', report_id=r.report_id, action='dismiss') }}" method="post">{{ csrf() }}<input type="hidden" name="view" value="{{ status }}"><button class="btn btn-outline-secondary btn-sm" type="submit">Dismiss</button></form>
+    </div>
+    {% else %}
+    <p class="small text-muted mb-0">Closed {{ r.resolved_at|fdate if r.resolved_at else '' }}</p>
+    {% endif %}
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state"><i class="bi bi-check2-circle" aria-hidden="true"></i><h2 class="h4 mt-2">Nothing here</h2><p class="text-muted mb-0">There are no {{ status if status != 'all' }} reports to show.</p></div>
+{% endif %}
+{% endblock %}

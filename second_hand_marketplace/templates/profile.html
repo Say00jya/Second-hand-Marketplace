@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf, field_error %}
+{% block title %}My profile | ReMarket{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <span class="avatar avatar-lg" aria-hidden="true">{{ user.full_name[0]|upper }}</span>
+    <div><h1 class="page-title mb-0">{{ user.full_name }}</h1><p class="text-muted mb-0">{{ user.email }} · Member since {{ user.created_at|fdate('%b %Y') }}</p></div>
+  </div>
+
+  <section aria-label="Account statistics" class="mb-4">
+    <div class="row g-3 row-cols-2 row-cols-md-4">
+      <div class="col"><div class="stat-card"><i class="bi bi-box-seam" aria-hidden="true"></i><div class="value">{{ stats.total_listings }}</div><div class="label">Total listings</div></div></div>
+      <div class="col"><div class="stat-card"><i class="bi bi-tag" aria-hidden="true"></i><div class="value">{{ stats.active_listings }}</div><div class="label">Active now</div></div></div>
+      <div class="col"><div class="stat-card"><i class="bi bi-bag-check" aria-hidden="true"></i><div class="value">{{ stats.sold_listings }}</div><div class="label">Sold ({{ stats.sold_value|inr }})</div></div></div>
+      <div class="col"><div class="stat-card"><i class="bi bi-heart" aria-hidden="true"></i><div class="value">{{ stats.wishlist_count }}</div><div class="label">In wishlist</div></div></div>
+      <div class="col"><div class="stat-card"><i class="bi bi-inbox" aria-hidden="true"></i><div class="value">{{ stats.inquiries_received }}</div><div class="label">Inquiries received</div></div></div>
+      <div class="col"><div class="stat-card"><i class="bi bi-send" aria-hidden="true"></i><div class="value">{{ stats.inquiries_sent }}</div><div class="label">Inquiries sent</div></div></div>
+    </div>
+  </section>
+
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <form method="post" class="card-plain pad needs-validation" novalidate>
+        {{ csrf() }}<input type="hidden" name="action" value="profile">
+        <h2 class="h5 fw-bold mb-3">Edit profile</h2>
+        <div class="mb-3">
+          <label class="form-label" for="full_name">Full name</label>
+          <input class="form-control {{ 'is-invalid' if errors.full_name }}" id="full_name" name="full_name" value="{{ user.full_name }}" required minlength="2" maxlength="100">
+          <div class="invalid-feedback">Enter your full name.</div>{{ field_error(errors, 'full_name') }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="email">Email (cannot be changed)</label>
+          <input class="form-control" id="email" value="{{ user.email }}" disabled>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label" for="phone">Mobile number</label>
+            <input class="form-control {{ 'is-invalid' if errors.phone }}" id="phone" name="phone" value="{{ user.phone }}" required pattern="[6-9][0-9]{9}" maxlength="10" inputmode="numeric">
+            <div class="invalid-feedback">Enter 10 digits starting with 6, 7, 8 or 9.</div>{{ field_error(errors, 'phone') }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="location">Town or city</label>
+            <input class="form-control {{ 'is-invalid' if errors.location }}" id="location" name="location" value="{{ user.location }}" required minlength="2" maxlength="100">
+            <div class="invalid-feedback">Enter your town or city.</div>{{ field_error(errors, 'location') }}
+          </div>
+        </div>
+        <button class="btn btn-primary" type="submit">Save profile</button>
+      </form>
+    </div>
+
+    <div class="col-lg-6">
+      <form method="post" class="card-plain pad needs-validation" novalidate>
+        {{ csrf() }}<input type="hidden" name="action" value="password">
+        <h2 class="h5 fw-bold mb-3">Change password</h2>
+        <div class="mb-3">
+          <label class="form-label" for="current_password">Current password</label>
+          <input class="form-control {{ 'is-invalid' if pw_errors.current_password }}" type="password" id="current_password" name="current_password" required autocomplete="current-password">
+          <div class="invalid-feedback">Enter your current password.</div>{{ field_error(pw_errors, 'current_password') }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="new_password">New password</label>
+          <input class="form-control {{ 'is-invalid' if pw_errors.new_password }}" type="password" id="new_password" name="new_password" required minlength="8" pattern="(?=.*[A-Za-z])(?=.*\d).{8,}" autocomplete="new-password">
+          <div class="invalid-feedback">Use at least 8 characters with a letter and a number.</div>{{ field_error(pw_errors, 'new_password') }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="confirm_password">Confirm new password</label>
+          <input class="form-control {{ 'is-invalid' if pw_errors.confirm_password }}" type="password" id="confirm_password" name="confirm_password" required data-match="new_password" autocomplete="new-password">
+          <div class="invalid-feedback">Passwords do not match.</div>{{ field_error(pw_errors, 'confirm_password') }}
+        </div>
+        <button class="btn btn-outline-primary" type="submit">Update password</button>
+      </form>
+    </div>
+  </div>
+
+  <section class="mt-5" aria-labelledby="sentTitle">
+    <h2 class="section-title mb-3" id="sentTitle">Messages you sent</h2>
+    {% if sent %}
+    <div class="table-card"><div class="table-responsive"><table class="table">
+      <thead><tr><th scope="col">Item</th><th scope="col">Seller</th><th scope="col">Message</th><th scope="col">Sent</th></tr></thead>
+      <tbody>{% for s in sent %}<tr><td><a href="{{ url_for('product_details', product_id=s.product_id) }}">{{ s.title|truncate(34) }}</a></td><td>{{ s.seller_name }}</td><td class="text-muted">{{ s.message|truncate(70) }}</td><td class="text-nowrap">{{ s.created_at|ago }}</td></tr>{% endfor %}</tbody>
+    </table></div></div>
+    {% else %}
+    <div class="empty-state py-4"><p class="text-muted mb-0">You have not contacted any sellers yet.</p></div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

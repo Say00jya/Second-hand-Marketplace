@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf, field_error %}
+{% block title %}Create account | ReMarket{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <div class="auth-card card-plain pad" style="max-width: 560px;">
+    <h1 class="h3 fw-bold mb-1">Create your account</h1>
+    <p class="text-muted">Join to list items, save favourites and message sellers.</p>
+    <form method="post" class="needs-validation" novalidate>
+      {{ csrf() }}
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label" for="full_name">Full name</label>
+          <input class="form-control {{ 'is-invalid' if errors.full_name }}" id="full_name" name="full_name" value="{{ form.get('full_name', '') }}" required minlength="2" maxlength="100" autocomplete="name">
+          <div class="invalid-feedback">Enter your full name (2 to 100 characters).</div>{{ field_error(errors, 'full_name') }}
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="email">Email address</label>
+          <input class="form-control {{ 'is-invalid' if errors.email }}" type="email" id="email" name="email" value="{{ form.get('email', '') }}" required maxlength="120" autocomplete="email">
+          <div class="invalid-feedback">Enter a valid email address.</div>{{ field_error(errors, 'email') }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="phone">Mobile number</label>
+          <input class="form-control {{ 'is-invalid' if errors.phone }}" type="tel" id="phone" name="phone" value="{{ form.get('phone', '') }}" required pattern="[6-9][0-9]{9}" inputmode="numeric" maxlength="10" autocomplete="tel">
+          <div class="invalid-feedback">Enter 10 digits starting with 6, 7, 8 or 9.</div>{{ field_error(errors, 'phone') }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="location">Town or city</label>
+          <input class="form-control {{ 'is-invalid' if errors.location }}" id="location" name="location" value="{{ form.get('location', '') }}" required minlength="2" maxlength="100" placeholder="e.g. Kochi" autocomplete="address-level2">
+          <div class="invalid-feedback">Enter your town or city.</div>{{ field_error(errors, 'location') }}
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="password">Password</label>
+          <div class="password-wrap">
+            <input class="form-control {{ 'is-invalid' if errors.password }}" type="password" id="password" name="password" required minlength="8" pattern="(?=.*[A-Za-z])(?=.*\d).{8,}" autocomplete="new-password" aria-describedby="pwHelp">
+            <button class="toggle-pw" type="button" data-target="password" aria-label="Show password"><i class="bi bi-eye" aria-hidden="true"></i></button>
+          </div>
+          <div class="form-text" id="pwHelp">At least 8 characters, with a letter and a number.</div>
+          <div class="invalid-feedback">Use at least 8 characters with a letter and a number.</div>{{ field_error(errors, 'password') }}
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="confirm_password">Confirm password</label>
+          <input class="form-control {{ 'is-invalid' if errors.confirm_password }}" type="password" id="confirm_password" name="confirm_password" required data-match="password" autocomplete="new-password">
+          <div class="invalid-feedback">Passwords do not match.</div>{{ field_error(errors, 'confirm_password') }}
+        </div>
+      </div>
+      <button class="btn btn-primary w-100 mt-4" type="submit">Create account</button>
+    </form>
+    <p class="text-center text-muted mt-4 mb-0">Already registered? <a href="{{ url_for('login') }}">Log in</a></p>
+  </div>
+</div>
+{% endblock %}

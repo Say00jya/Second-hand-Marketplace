@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import product_card with context %}
+{% block title %}My wishlist | ReMarket{% endblock %}
+{% block page_id %}wishlist{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <h1 class="page-title mb-1">My wishlist</h1>
+  <p class="text-muted">Items you saved. Tap the heart again to remove one.</p>
+  {% if items %}
+  <div class="row g-4 row-cols-1 row-cols-sm-2 row-cols-lg-4">
+    {% for p in items %}<div class="col product-col">{{ product_card(p) }}</div>{% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-heart" aria-hidden="true"></i>
+    <h2 class="h4 mt-2">Nothing saved yet</h2>
+    <p class="text-muted">Tap the heart on any listing to keep it here for later.</p>
+    <a class="btn btn-primary" href="{{ url_for('products') }}">Browse listings</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

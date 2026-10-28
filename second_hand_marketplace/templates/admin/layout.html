@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}{% block admin_title %}Admin{% endblock %} | ReMarket Admin{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="admin-shell">
+    <nav class="admin-side" aria-label="Admin sections">
+      {% set links = [
+        ('admin_dashboard', 'bi-speedometer2', 'Dashboard'),
+        ('admin_users', 'bi-people', 'Users'),
+        ('admin_products', 'bi-box-seam', 'Products'),
+        ('admin_categories', 'bi-grid', 'Categories'),
+        ('admin_reports', 'bi-flag', 'Reports'),
+        ('admin_sql_demo', 'bi-database', 'SQL demo') ] %}
+      {% for endpoint, icon, label in links %}
+        <a href="{{ url_for(endpoint) }}" class="{{ 'active' if request.endpoint == endpoint }}" {% if request.endpoint == endpoint %}aria-current="page"{% endif %}>
+          <i class="bi {{ icon }}" aria-hidden="true"></i> {{ label }}
+        </a>
+      {% endfor %}
+    </nav>
+    <div class="min-w-0">
+      {% block admin_content %}{% endblock %}
+    </div>
+  </div>
+</div>
+{% endblock %}

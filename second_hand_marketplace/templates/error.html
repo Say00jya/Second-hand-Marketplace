@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} | ReMarket{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <div class="empty-state mx-auto" style="max-width: 560px;">
+    <span class="price-tag lg mb-3">{{ code }}</span>
+    <h1 class="h3 fw-bold">{{ title }}</h1>
+    <p class="text-muted">{{ message }}</p>
+    <div class="d-flex gap-2 justify-content-center">
+      <a class="btn btn-primary" href="{{ url_for('index') }}">Go to home</a>
+      <a class="btn btn-outline-primary" href="{{ url_for('products') }}">Browse listings</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

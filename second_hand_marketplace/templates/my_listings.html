@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf, status_badge %}
+{% block title %}My listings | ReMarket{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+    <div><h1 class="page-title mb-0">My listings</h1><p class="text-muted mb-0">Manage what you are selling and reply to buyers.</p></div>
+    <a class="btn btn-tag" href="{{ url_for('sell') }}"><i class="bi bi-plus-lg" aria-hidden="true"></i> New listing</a>
+  </div>
+
+  <ul class="nav nav-pills mb-3 gap-1" aria-label="Filter listings by status">
+    {% for key, label, n in [('all', 'All', counts.total), ('active', 'Active', counts.active), ('sold', 'Sold', counts.sold), ('removed', 'Removed', counts.removed)] %}
+    <li class="nav-item"><a class="nav-link {{ 'active' if status == key }}" style="{{ 'background:var(--accent)' if status == key }}" href="{{ url_for('my_listings', status=key) }}">{{ label }} <span class="opacity-75">({{ n or 0 }})</span></a></li>
+    {% endfor %}
+  </ul>
+
+  {% if listings %}
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <caption class="visually-hidden">Your listings</caption>
+        <thead><tr><th scope="col">Item</th><th scope="col">Price</th><th scope="col">Status</th><th scope="col">Interest</th><th scope="col" class="text-end">Actions</th></tr></thead>
+        <tbody>
+        {% for p in listings %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-3">
+                <img class="thumb" src="{{ p.image|image_url }}" alt="">
+                <div><a class="fw-semibold text-decoration-none" href="{{ url_for('product_details', product_id=p.product_id) }}">{{ p.title|truncate(46) }}</a>
+                  <div class="small text-muted">{{ p.category_name }} · {{ p.location }} · {{ p.created_at|fdate }}</div></div>
+              </div>
+            </td>
+            <td class="fw-semibold">{{ p.price|inr }}</td>
+            <td>{{ status_badge(p.status) }}</td>
+            <td class="small text-muted"><i class="bi bi-chat-dots" aria-hidden="true"></i> {{ p.inquiry_count }} <span class="visually-hidden">inquiries</span> &nbsp; <i class="bi bi-heart" aria-hidden="true"></i> {{ p.wishlist_count }} <span class="visually-hidden">saves</span></td>
+            <td class="text-end">
+              <div class="d-inline-flex flex-wrap justify-content-end gap-1">
+                {% if p.status != 'removed' %}
+                <a class="btn btn-outline-primary btn-sm" href="{{ url_for('edit_product', product_id=p.product_id) }}">Edit</a>
+                <form action="{{ url_for('change_status', product_id=p.product_id) }}" method="post">
+                  {{ csrf() }}
+                  {% if p.status == 'active' %}<input type="hidden" name="status" value="sold"><button class="btn btn-outline-secondary btn-sm" type="submit">Mark sold</button>
+                  {% else %}<input type="hidden" name="status" value="active"><button class="btn btn-outline-secondary btn-sm" type="submit">Relist</button>{% endif %}
+                </form>
+                {% endif %}
+                <form action="{{ url_for('delete_product', product_id=p.product_id) }}" method="post" data-confirm="Delete “{{ p.title }}”? This cannot be undone.">
+                  {{ csrf() }}<button class="btn btn-outline-danger btn-sm" type="submit" aria-label="Delete {{ p.title }}"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-box-seam" aria-hidden="true"></i>
+    <h2 class="h4 mt-2">{{ 'You have not listed anything yet' if status == 'all' else 'No ' ~ status ~ ' listings' }}</h2>
+    <p class="text-muted">Take a photo, set a price and your first item can be live in two minutes.</p>
+    <a class="btn btn-primary" href="{{ url_for('sell') }}">Sell an item</a>
+  </div>
+  {% endif %}
+
+  <section class="mt-5" id="inbox" aria-labelledby="inboxTitle">
+    <h2 class="section-title mb-3" id="inboxTitle">Buyer inquiries <span class="badge badge-soft rounded-pill fs-6">{{ inquiries|length }}</span></h2>
+    {% if inquiries %}
+    <div class="vstack gap-3">
+      {% for i in inquiries %}
+      <article class="card-plain pad py-3 {{ 'border-start border-4' if not i.is_read }}" style="{{ 'border-left-color: var(--accent) !important' if not i.is_read }}">
+        <div class="d-flex flex-wrap justify-content-between gap-2">
+          <div>
+            <strong>{{ i.sender_name }}</strong> asked about
+            <a href="{{ url_for('product_details', product_id=i.product_id) }}">{{ i.title }}</a>
+            {% if not i.is_read %}<span class="badge badge-pending rounded-pill ms-1">New</span>{% endif %}
+          </div>
+          <small class="text-muted">{{ i.created_at|ago }}</small>
+        </div>
+        <p class="my-2">{{ i.message }}</p>
+        <div class="d-flex flex-wrap gap-3 align-items-center small">
+          <a href="mailto:{{ i.sender_email }}"><i class="bi bi-envelope" aria-hidden="true"></i> {{ i.sender_email }}</a>
+          <a href="tel:{{ i.sender_phone }}"><i class="bi bi-telephone" aria-hidden="true"></i> {{ i.sender_phone }}</a>
+          {% if not i.is_read %}
+          <form action="{{ url_for('mark_inquiry_read', inquiry_id=i.inquiry_id) }}" method="post" class="ms-auto">{{ csrf() }}<button class="btn btn-outline-primary btn-sm" type="submit">Mark as read</button></form>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state py-4"><p class="text-muted mb-0">No messages yet. Buyers who contact you will appear here.</p></div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

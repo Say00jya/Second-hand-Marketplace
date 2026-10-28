@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import product_card with context %}
+{% block title %}ReMarket | Buy and sell second-hand in Kerala{% endblock %}
+{% block content %}
+
+<section class="hero" aria-labelledby="heroTitle">
+  <div class="container">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-6">
+        <h1 id="heroTitle">Good things deserve a second owner.</h1>
+        <p class="lead mt-3 mb-4">Find phones, laptops, furniture and more from sellers in Kochi, Kottayam, Kozhikode and across Kerala, at prices that make sense.</p>
+
+        <form class="hero-search" action="{{ url_for('products') }}" method="get" role="search">
+          <label class="visually-hidden" for="heroQuery">What are you looking for?</label>
+          <input id="heroQuery" class="form-control" type="search" name="q" placeholder="What are you looking for?" maxlength="100">
+          <label class="visually-hidden" for="heroCategory">Category</label>
+          <select id="heroCategory" class="form-select" name="category">
+            <option value="">All categories</option>
+            {% for c in categories %}<option value="{{ c.category_id }}">{{ c.name }}</option>{% endfor %}
+          </select>
+          <button class="btn btn-primary px-4" type="submit"><i class="bi bi-search" aria-hidden="true"></i> Search</button>
+        </form>
+
+        <div class="d-flex flex-wrap gap-2 mt-3" aria-label="Popular searches">
+          <a class="chip" href="{{ url_for('products', q='laptop') }}">Laptops</a>
+          <a class="chip" href="{{ url_for('products', q='phone') }}">Phones</a>
+          <a class="chip" href="{{ url_for('products', max_price=5000) }}">Under ₹5,000</a>
+          <a class="chip" href="{{ url_for('products', location='Kochi') }}">In Kochi</a>
+        </div>
+
+        <div class="stat-strip">
+          <div><strong>{{ stats.active_products }}</strong>items for sale</div>
+          <div><strong>{{ stats.sellers }}</strong>active sellers</div>
+          <div><strong>{{ stats.sold_products }}</strong>items rehomed</div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        {% if featured|length >= 3 %}
+        <div class="hang-wrap" aria-label="Featured listings">
+          {% for p in featured[:3] %}
+          <a class="hang-item" href="{{ url_for('product_details', product_id=p.product_id) }}">
+            <div class="tile">
+              <img src="{{ p.image|image_url }}" alt="{{ p.title }}">
+              <div class="tile-body">{{ p.title|truncate(34) }}</div>
+            </div>
+            <span class="price-tag">{{ p.price|inr }}</span>
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="catTitle">
+  <div class="container">
+    <div class="section-head"><h2 class="section-title" id="catTitle">Shop by category</h2></div>
+    <div class="row g-3 row-cols-2 row-cols-md-3 row-cols-lg-5">
+      {% for c in categories %}
+      <div class="col">
+        <a class="category-tile" href="{{ url_for('products', category=c.category_id) }}">
+          <span class="icon" aria-hidden="true"><i class="bi {{ c.icon }}"></i></span>
+          <span class="name">{{ c.name }}</span>
+          <span class="count">{{ c.product_count }} item{{ '' if c.product_count == 1 else 's' }}</span>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% if featured %}
+<section class="section pt-0" aria-labelledby="featTitle">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title mb-1" id="featTitle">Picked by our team</h2><p class="text-muted mb-0">Well-priced items from trusted sellers.</p></div>
+    </div>
+    <div class="row g-4 row-cols-1 row-cols-sm-2 row-cols-lg-4">
+      {% for p in featured %}<div class="col product-col">{{ product_card(p) }}</div>{% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="section pt-0" aria-labelledby="recentTitle">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-title mb-0" id="recentTitle">Just listed</h2>
+      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('products') }}">See all listings</a>
+    </div>
+    <div class="row g-4 row-cols-1 row-cols-sm-2 row-cols-lg-4">
+      {% for p in recent %}<div class="col product-col">{{ product_card(p) }}</div>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section pt-0" aria-labelledby="howTitle">
+  <div class="container">
+    <div class="section-head"><h2 class="section-title mb-0" id="howTitle">How ReMarket works</h2></div>
+    <ol class="row g-3 row-cols-1 row-cols-sm-2 row-cols-lg-4 steps list-unstyled">
+      <li class="col"><div class="step"><div class="step-number" aria-hidden="true">1</div><h3>Create an account</h3><p>Sign up with your email and mobile number. It takes under a minute.</p></div></li>
+      <li class="col"><div class="step"><div class="step-number" aria-hidden="true">2</div><h3>List or browse</h3><p>Post an item with a photo and price, or search and filter what others have listed.</p></div></li>
+      <li class="col"><div class="step"><div class="step-number" aria-hidden="true">3</div><h3>Message the seller</h3><p>Ask questions, agree on a price and choose a safe place to meet.</p></div></li>
+      <li class="col"><div class="step"><div class="step-number" aria-hidden="true">4</div><h3>Mark it sold</h3><p>Once the item finds its new owner, mark the listing as sold.</p></div></li>
+    </ol>
+    <div class="cta-band mt-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+      <div><h2>Clearing out a cupboard?</h2><p class="mb-0">Turn things you no longer use into cash. Listing is free.</p></div>
+      <a class="btn btn-tag btn-lg" href="{{ url_for('sell') }}">Sell an item</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

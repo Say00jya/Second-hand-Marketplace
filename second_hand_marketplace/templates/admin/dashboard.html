@@ -1,0 +1,72 @@
+{% extends 'admin/layout.html' %}
+{% from '_macros.html' import status_badge %}
+{% block admin_title %}Dashboard{% endblock %}
+{% block admin_content %}
+<h1 class="page-title mb-4">Dashboard</h1>
+
+<div class="row g-3 row-cols-2 row-cols-xl-4 mb-4">
+  <div class="col"><div class="stat-card"><i class="bi bi-people" aria-hidden="true"></i><div class="value">{{ totals.users }}</div><div class="label">Registered users</div></div></div>
+  <div class="col"><div class="stat-card"><i class="bi bi-tag" aria-hidden="true"></i><div class="value">{{ totals.active_products }}</div><div class="label">Active listings (of {{ totals.products }})</div></div></div>
+  <div class="col"><div class="stat-card"><i class="bi bi-bag-check" aria-hidden="true"></i><div class="value">{{ totals.sold_products }}</div><div class="label">Items sold</div></div></div>
+  <div class="col"><div class="stat-card"><i class="bi bi-flag" aria-hidden="true"></i><div class="value">{{ totals.pending_reports }}</div><div class="label">Reports to review</div></div></div>
+  <div class="col"><div class="stat-card"><i class="bi bi-grid" aria-hidden="true"></i><div class="value">{{ totals.categories }}</div><div class="label">Categories</div></div></div>
+  <div class="col"><div class="stat-card"><i class="bi bi-chat-dots" aria-hidden="true"></i><div class="value">{{ totals.inquiries }}</div><div class="label">Inquiries sent</div></div></div>
+  <div class="col"><div class="stat-card"><i class="bi bi-heart" aria-hidden="true"></i><div class="value">{{ totals.wishlist_items }}</div><div class="label">Wishlist saves</div></div></div>
+  <div class="col"><div class="stat-card"><i class="bi bi-currency-rupee" aria-hidden="true"></i><div class="value">{{ totals.avg_price|inr }}</div><div class="label">Average active price</div></div></div>
+</div>
+
+<div class="row g-4">
+  <div class="col-xl-6">
+    <section class="card-plain pad h-100" aria-labelledby="catStatsTitle">
+      <h2 class="h5 fw-bold mb-3" id="catStatsTitle">Active listings by category</h2>
+      {% set top = category_stats[0].product_count if category_stats and category_stats[0].product_count else 1 %}
+      {% for c in category_stats %}
+      <div class="bar-row">
+        <span>{{ c.name }}</span>
+        <div class="bar-track" role="img" aria-label="{{ c.product_count }} listings"><div class="bar-fill" style="width: {{ (c.product_count / top * 100)|round|int }}%"></div></div>
+        <strong class="text-end">{{ c.product_count }}</strong>
+      </div>
+      {% endfor %}
+    </section>
+  </div>
+  <div class="col-xl-6">
+    <section class="table-card h-100" aria-labelledby="priceTitle">
+      <h2 class="h5 fw-bold p-3 pb-2 mb-0" id="priceTitle">Prices by category</h2>
+      <div class="table-responsive"><table class="table">
+        <thead><tr><th scope="col">Category</th><th scope="col" class="text-end">Average</th><th scope="col" class="text-end">Lowest</th><th scope="col" class="text-end">Highest</th></tr></thead>
+        <tbody>{% for c in category_stats if c.product_count %}<tr><td>{{ c.name }}</td><td class="text-end">{{ c.avg_price|inr }}</td><td class="text-end">{{ c.min_price|inr }}</td><td class="text-end">{{ c.max_price|inr }}</td></tr>{% endfor %}</tbody>
+      </table></div>
+    </section>
+  </div>
+
+  <div class="col-xl-6">
+    <section class="table-card h-100" aria-labelledby="sellersTitle">
+      <h2 class="h5 fw-bold p-3 pb-2 mb-0" id="sellersTitle">Most active sellers</h2>
+      <div class="table-responsive"><table class="table">
+        <thead><tr><th scope="col">Seller</th><th scope="col">Location</th><th scope="col" class="text-end">Listings</th><th scope="col" class="text-end">Sold</th></tr></thead>
+        <tbody>{% for s in top_sellers %}<tr><td>{{ s.full_name }}</td><td>{{ s.location }}</td><td class="text-end">{{ s.listings }}</td><td class="text-end">{{ s.sold|int }}</td></tr>{% endfor %}</tbody>
+      </table></div>
+    </section>
+  </div>
+  <div class="col-xl-6">
+    <section class="table-card h-100" aria-labelledby="pendingTitle">
+      <div class="d-flex justify-content-between align-items-center p-3 pb-2"><h2 class="h5 fw-bold mb-0" id="pendingTitle">Reports waiting for review</h2><a href="{{ url_for('admin_reports') }}" class="small">View all</a></div>
+      {% if pending %}
+      <div class="table-responsive"><table class="table">
+        <tbody>{% for r in pending %}<tr><td><a href="{{ url_for('product_details', product_id=r.product_id) }}">{{ r.title|truncate(36) }}</a><div class="small text-muted">{{ r.reason }}</div></td><td class="text-end text-nowrap small text-muted">{{ r.created_at|ago }}</td></tr>{% endfor %}</tbody>
+      </table></div>
+      {% else %}<p class="text-muted p-3 pt-0 mb-0">All caught up. No reports are waiting.</p>{% endif %}
+    </section>
+  </div>
+
+  <div class="col-12">
+    <section class="table-card" aria-labelledby="recentAdminTitle">
+      <h2 class="h5 fw-bold p-3 pb-2 mb-0" id="recentAdminTitle">Recently added listings</h2>
+      <div class="table-responsive"><table class="table">
+        <thead><tr><th scope="col">Title</th><th scope="col">Category</th><th scope="col">Seller</th><th scope="col">Price</th><th scope="col">Status</th><th scope="col">Added</th></tr></thead>
+        <tbody>{% for p in recent %}<tr><td><a href="{{ url_for('product_details', product_id=p.product_id) }}">{{ p.title|truncate(44) }}</a></td><td>{{ p.category_name }}</td><td>{{ p.seller_name }}</td><td>{{ p.price|inr }}</td><td>{{ status_badge(p.status) }}</td><td class="text-nowrap">{{ p.created_at|ago }}</td></tr>{% endfor %}</tbody>
+      </table></div>
+    </section>
+  </div>
+</div>
+{% endblock %}

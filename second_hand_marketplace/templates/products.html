@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import product_card with context %}
+{% block title %}{{ 'Results for “' ~ filters.q ~ '”' if filters.q else 'Browse listings' }} | ReMarket{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3">
+    <div>
+      <h1 class="page-title mb-0">{{ 'Results for “' ~ filters.q ~ '”' if filters.q else 'Browse listings' }}</h1>
+      <p class="text-muted mb-0" aria-live="polite">{{ total }} item{{ '' if total == 1 else 's' }} found</p>
+    </div>
+    <button class="btn btn-outline-primary d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#filters" aria-expanded="false" aria-controls="filters">
+      <i class="bi bi-sliders" aria-hidden="true"></i> Filters
+    </button>
+  </div>
+
+  <form method="get" action="{{ url_for('products') }}">
+    <div class="row g-4">
+      <aside class="col-lg-3">
+        <div class="collapse d-lg-block" id="filters">
+          <div class="card-plain pad filter-panel">
+            <div class="mb-3">
+              <label class="form-label" for="q">Keyword</label>
+              <input class="form-control" id="q" name="q" value="{{ filters.q }}" maxlength="100" placeholder="e.g. laptop">
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="category">Category</label>
+              <select class="form-select" id="category" name="category">
+                <option value="">All categories</option>
+                {% for c in categories %}<option value="{{ c.category_id }}" {{ 'selected' if filters.category == c.category_id }}>{{ c.name }}</option>{% endfor %}
+              </select>
+            </div>
+            <fieldset class="mb-3">
+              <legend class="form-label fs-6">Price (₹)</legend>
+              <div class="row g-2">
+                <div class="col-6"><label class="visually-hidden" for="min_price">Minimum price</label><input class="form-control" type="number" min="0" step="1" id="min_price" name="min_price" value="{{ filters.min_price }}" placeholder="Min"></div>
+                <div class="col-6"><label class="visually-hidden" for="max_price">Maximum price</label><input class="form-control" type="number" min="0" step="1" id="max_price" name="max_price" value="{{ filters.max_price }}" placeholder="Max"></div>
+              </div>
+            </fieldset>
+            <fieldset class="mb-3">
+              <legend class="form-label fs-6">Condition</legend>
+              {% for c in CONDITIONS %}
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="condition" value="{{ c }}" id="cond{{ loop.index }}" {{ 'checked' if c in filters.conditions }}>
+                <label class="form-check-label" for="cond{{ loop.index }}">{{ c }}</label>
+              </div>
+              {% endfor %}
+            </fieldset>
+            <div class="mb-3">
+              <label class="form-label" for="location">Location</label>
+              <input class="form-control" id="location" name="location" list="locationList" value="{{ filters.location }}" placeholder="e.g. Kottayam" maxlength="100">
+              <datalist id="locationList">{% for l in locations %}<option value="{{ l.location }}">{% endfor %}</datalist>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="sort">Sort by</label>
+              <select class="form-select" id="sort" name="sort">
+                {% for key, label in sort_options.items() %}<option value="{{ key }}" {{ 'selected' if filters.sort == key }}>{{ label }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="d-grid gap-2">
+              <button class="btn btn-primary" type="submit">Apply filters</button>
+              <a class="btn btn-outline-secondary" href="{{ url_for('products') }}">Clear all</a>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <section class="col-lg-9" aria-label="Search results">
+        {% if items %}
+        <div class="row g-4 row-cols-1 row-cols-sm-2 row-cols-xl-3">
+          {% for p in items %}<div class="col product-col">{{ product_card(p) }}</div>{% endfor %}
+        </div>
+
+        {% if pages > 1 %}
+        {% set prefix = '?' ~ base_qs ~ '&' if base_qs else '?' %}
+        <nav class="mt-4" aria-label="Pagination">
+          <ul class="pagination justify-content-center flex-wrap">
+            <li class="page-item {{ 'disabled' if page == 1 }}"><a class="page-link" href="{{ prefix }}page={{ page - 1 }}">Previous</a></li>
+            {% for n in range(1, pages + 1) %}
+            <li class="page-item {{ 'active' if n == page }}"><a class="page-link" href="{{ prefix }}page={{ n }}" {% if n == page %}aria-current="page"{% endif %}>{{ n }}</a></li>
+            {% endfor %}
+            <li class="page-item {{ 'disabled' if page == pages }}"><a class="page-link" href="{{ prefix }}page={{ page + 1 }}">Next</a></li>
+          </ul>
+        </nav>
+        {% endif %}
+        {% else %}
+        <div class="empty-state">
+          <i class="bi bi-search" aria-hidden="true"></i>
+          <h2 class="h4 mt-2">No items match these filters</h2>
+          <p class="text-muted">Try a shorter keyword, widen the price range or remove a filter.</p>
+          <a class="btn btn-primary" href="{{ url_for('products') }}">Clear filters</a>
+        </div>
+        {% endif %}
+      </section>
+    </div>
+  </form>
+</div>
+{% endblock %}
